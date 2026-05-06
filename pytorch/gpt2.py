@@ -61,20 +61,23 @@ output_dim = 256
 
 torch.manual_seed(123)
 token_embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
-#print(vocab_size)
-#print(embedding_layer.weight)
-#print(embedding_layer(torch.tensor([1, 0, 0, 1])))
+print(vocab_size, output_dim)
+# print(token_embedding_layer.shape)
+# print(token_embedding_layer.weight)
+#print(token_embedding_layer(torch.tensor([1, 0, 0, 1])))
 
 inputs, targets = next(iter(dataloader)) # first batch
 token_embeddings = token_embedding_layer(inputs)
-#print("Token IDS:", inputs.shape, "\n", inputs)  # 8x4
-#print(embeddings.shape)  # 8x4x256
+print("Token IDS:", inputs.shape, "\n", inputs)  # 8x4
+print(token_embeddings.shape)  # 8x4x256
 
 # Add positional encodings to the embeddings.
 pos_embedding_layer = torch.nn.Embedding(context_length, output_dim)
 pos_embeddings = pos_embedding_layer(torch.arange(context_length))
-#print(pos_embeddings.shape)  # 8x4
+print(pos_embeddings.shape)  # 4x256
+print(pos_embeddings)
 input_embeddings = token_embeddings + pos_embeddings
-# print(input_embeddings.shape)  # 8x4x256
+print(input_embeddings.shape)  # 8x4x256
 # print(token_embeddings)
 # print(input_embeddings)
+
