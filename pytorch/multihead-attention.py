@@ -41,8 +41,9 @@ class MultiHeadAttention(nn.Module):
         keys = self.W_key(x)
         queries = self.W_query(x)
         values = self.W_value(x)
+        # keys.shape = (b, num_tokens, d_out)
 
-        # Split each matrix into num_heads copies.
+        # Split each n*d_out matrix into num_heads copies.
         keys = keys.view(b, num_tokens, self.num_heads, self.head_dim)
         queries = queries.view(b, num_tokens, self.num_heads, self.head_dim)
         values = values.view(b, num_tokens, self.num_heads, self.head_dim)

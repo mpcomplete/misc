@@ -1,7 +1,9 @@
 import sys, os
-import torch
 
 print("Python exe:", sys.executable)
+
+import torch
+
 print("Torch version:", torch.__version__)
 print("Torch path:", torch.__file__)
 print("Torch CUDA build:", torch.version.cuda)
