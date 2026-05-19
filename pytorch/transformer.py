@@ -1,3 +1,4 @@
+# Chapter 4
 
 GPT_CONFIG_124M = {
     "vocab_size": 50257,    # Vocabulary size
