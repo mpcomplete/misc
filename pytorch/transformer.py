@@ -34,9 +34,7 @@ class DummyGPTModel(nn.Module):
 
         # Use a placeholder for LayerNorm
         self.final_norm = DummyLayerNorm(cfg["emb_dim"])
-        self.out_head = nn.Linear(
-            cfg["emb_dim"], cfg["vocab_size"], bias=False
-        )
+        self.out_head = nn.Linear(cfg["emb_dim"], cfg["vocab_size"], bias=False)
 
     def forward(self, in_idx):
         batch_size, seq_len = in_idx.shape
@@ -144,6 +142,49 @@ class TransformerBlock(nn.Module):
         x = x + shortcut
         return x
 
+# 4.7 Real GPT model.
+# Uses our real transformer block and layer normalization.
+class GPTModel(nn.Module):
+    def __init__(self, cfg):
+        super().__init__()
+        self.tok_emb = nn.Embedding(cfg["vocab_size"], cfg["emb_dim"])
+        self.pos_emb = nn.Embedding(cfg["context_length"], cfg["emb_dim"])
+        self.drop_emb = nn.Dropout(cfg["drop_rate"])
+
+        # Use a placeholder for TransformerBlock
+        self.trf_blocks = nn.Sequential(
+            *[TransformerBlock(cfg) for _ in range(cfg["n_layers"])])
+
+        # Use a placeholder for LayerNorm
+        self.final_norm = LayerNorm(cfg["emb_dim"])
+        self.out_head = nn.Linear(cfg["emb_dim"], cfg["vocab_size"], bias=False)
+
+    def forward(self, in_idx):
+        batch_size, seq_len = in_idx.shape
+        tok_embeds = self.tok_emb(in_idx)
+        pos_embeds = self.pos_emb(torch.arange(seq_len, device=in_idx.device))
+        x = tok_embeds + pos_embeds
+        x = self.drop_emb(x)
+        x = self.trf_blocks(x)
+        x = self.final_norm(x)
+        logits = self.out_head(x)
+        return logits
+
+# 4.8 Iteratively generating text using our model.
+# Generates `max_new_tokens`, each time taking the most recent `context_size` input tokens,
+# finding the index of the most probable output token, and appending it to the input for the
+# next iteration.
+def generate_text_simple(model, idx, max_new_tokens, context_size):
+    for _ in range(max_new_tokens):
+        idx_cond = idx[:, -context_size:]
+        with torch.no_grad():
+            logits = model(idx_cond)
+        logits = logits[:, -1, :]
+        probas = torch.softmax(logits, dim=-1)
+        idx_next = torch.argmax(probas, dim=-1, keepdim=True)
+        idx = torch.cat((idx, idx_next), dim=1)
+    return idx
+
 import tiktoken
 
 tokenizer = tiktoken.get_encoding("gpt2")
@@ -164,3 +205,28 @@ model = DummyGPTModel(GPT_CONFIG_124M)
 logits = model(batch)
 print("Output shape:", logits.shape)
 print(logits)
+
+torch.manual_seed(123)
+model = GPTModel(GPT_CONFIG_124M)
+out = model(batch)
+print("--- Real model")
+print("Input batch:\n", batch)
+print("\nOutput shape:", out.shape)
+print(out)
+
+# 4.8 Generating text
+torch.manual_seed(123)
+start_context = "The pig is really"
+encoded = tokenizer.encode(start_context)
+print("encoded:", encoded)  # list of 4 token idx's
+encoded_tensor = torch.tensor(encoded).unsqueeze(0)
+print("encoded_tensor.shape:", encoded_tensor.shape)  # 1x4
+
+model.eval()  # skips dropout,etc that are only used during training
+out = generate_text_simple(model, encoded_tensor, max_new_tokens=6, context_size=GPT_CONFIG_124M["context_length"])
+print("Output:", out)
+print("Output len=", len(out[0]))
+
+decoded_text = tokenizer.decode(out.squeeze(0).tolist())
+print("Input:", start_context)
+print("Output:", decoded_text)

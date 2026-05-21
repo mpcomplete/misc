@@ -78,7 +78,7 @@ inputs = torch.tensor(
      [0.77, 0.25, 0.10],  # one
      [0.05, 0.80, 0.55]]  # step
 )
-print("inputshape: ", inputs.shape)
+# print("inputshape: ", inputs.shape)
 
 torch.manual_seed(123)
 batch = torch.stack((inputs, inputs), dim=0)
@@ -86,8 +86,8 @@ batch_size, context_length, d_in = batch.shape # 2x6x3
 d_out = 2
 mha = MultiHeadAttention(d_in, d_out, context_length, 0.0, num_heads=2)
 context_vecs = mha(batch)
-print("mha context_vecs shape=",context_vecs.shape)
-print(context_vecs)
+# print("mha context_vecs shape=",context_vecs.shape)
+# print(context_vecs)
 
 # # Exercise 3.3. GPT2 sized attention heads.
 # d_in, d_out = 768, 768
@@ -114,5 +114,5 @@ mha_ch03 = MultiHeadAttention(
 ).to(device)
 
 out = mha_ch03(embeddings)
-print("shape=", out.shape)
-print(out)
+# print("shape=", out.shape)
+# print(out)

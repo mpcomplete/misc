@@ -81,3 +81,8 @@ print(input_embeddings.shape)  # 8x4x256
 # print(token_embeddings)
 # print(input_embeddings)
 
+tokenizer = tiktoken.get_encoding("gpt2")
+for i in range(0, 500):
+    print(tokenizer.decode([i]), "  |  ", end="")
+    if i % 25 == 0:
+        print('\n', i, "-", i+25, ": ", end="")
