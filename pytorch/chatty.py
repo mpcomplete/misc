@@ -196,18 +196,44 @@ tokenizer = tiktoken.get_encoding("gpt2")
 
 batch = []
 
-# 4.8 Generating text
 torch.manual_seed(123)
 model = GPTModel(GPT_CONFIG_124M)
-start_context = "The pig is really"
-encoded = tokenizer.encode(start_context)
-encoded_tensor = torch.tensor(encoded).unsqueeze(0)
+model.to(device)
+model.eval()
 
-model.eval()  # skips dropout,etc that are only used during training
-out = generate_text_simple(model, encoded_tensor, max_new_tokens=6, context_size=GPT_CONFIG_124M["context_length"])
-print("Output:", out)
-print("Output len=", len(out[0]))
+def generate_and_stream(model, prompt, context_size):
+    encoded = tokenizer.encode(prompt)
+    idx = torch.tensor(encoded).unsqueeze(0).to(device)
+    print(prompt, end="", flush=True)
 
-decoded_text = tokenizer.decode(out.squeeze(0).tolist())
-print("Input:", start_context)
-print("Output:", decoded_text)
+    try:
+        while True:
+            idx_cond = idx[:, -context_size:]
+            with torch.no_grad():
+                logits = model(idx_cond)
+            logits = logits[:, -1, :]
+            probas = torch.softmax(logits, dim=-1)
+            idx_next = torch.argmax(probas, dim=-1, keepdim=True)
+            idx = torch.cat((idx, idx_next), dim=1)
+            new_token = idx_next.squeeze(0).tolist()[-1]
+            decoded = tokenizer.decode([new_token])
+            print(decoded, end="", flush=True)
+
+            if new_token == tokenizer.eot_token:
+                break
+    except KeyboardInterrupt:
+        print("\n[Interrupted]")
+
+def main():
+    print("Interactive LLM - Enter a prompt (Ctrl+C to exit)")
+    while True:
+        try:
+            prompt = input("\n> ")
+            if prompt:
+                generate_and_stream(model, prompt, GPT_CONFIG_124M["context_length"])
+        except KeyboardInterrupt:
+            print("\nExiting.")
+            break
+
+if __name__ == "__main__":
+    main()
