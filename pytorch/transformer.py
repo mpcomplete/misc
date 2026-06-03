@@ -185,48 +185,57 @@ def generate_text_simple(model, idx, max_new_tokens, context_size):
         idx = torch.cat((idx, idx_next), dim=1)
     return idx
 
-import tiktoken
+def text_to_token_ids(text, tokenizer):
+    encoded = tokenizer.encode(text, allowed_special={'<|endoftext|>'})
+    return torch.tensor(encoded).unsqueeze(0)
 
-tokenizer = tiktoken.get_encoding("gpt2")
+def token_ids_to_text(token_ids, tokenizer):
+    flat = token_ids.squeeze(0)
+    return tokenizer.decode(flat.tolist())
 
-batch = []
+if __name__ == "__main__":
+    import tiktoken
 
-txt1 = "Every effort moves you"
-txt2 = "Every day holds a"
+    tokenizer = tiktoken.get_encoding("gpt2")
 
-batch.append(torch.tensor(tokenizer.encode(txt1)))
-batch.append(torch.tensor(tokenizer.encode(txt2)))
-batch = torch.stack(batch, dim=0)
-print(batch)
+    batch = []
 
-torch.manual_seed(123)
-model = DummyGPTModel(GPT_CONFIG_124M)
+    txt1 = "Every effort moves you"
+    txt2 = "Every day holds a"
 
-logits = model(batch)
-print("Output shape:", logits.shape)
-print(logits)
+    batch.append(torch.tensor(tokenizer.encode(txt1)))
+    batch.append(torch.tensor(tokenizer.encode(txt2)))
+    batch = torch.stack(batch, dim=0)
+    print(batch)
 
-torch.manual_seed(123)
-model = GPTModel(GPT_CONFIG_124M)
-out = model(batch)
-print("--- Real model")
-print("Input batch:\n", batch)
-print("\nOutput shape:", out.shape)
-print(out)
+    torch.manual_seed(123)
+    model = DummyGPTModel(GPT_CONFIG_124M)
 
-# 4.8 Generating text
-torch.manual_seed(123)
-start_context = "The pig is really"
-encoded = tokenizer.encode(start_context)
-print("encoded:", encoded)  # list of 4 token idx's
-encoded_tensor = torch.tensor(encoded).unsqueeze(0)
-print("encoded_tensor.shape:", encoded_tensor.shape)  # 1x4
+    logits = model(batch)
+    print("Output shape:", logits.shape)
+    print(logits)
 
-model.eval()  # skips dropout,etc that are only used during training
-out = generate_text_simple(model, encoded_tensor, max_new_tokens=6, context_size=GPT_CONFIG_124M["context_length"])
-print("Output:", out)
-print("Output len=", len(out[0]))
+    torch.manual_seed(123)
+    model = GPTModel(GPT_CONFIG_124M)
+    out = model(batch)
+    print("--- Real model")
+    print("Input batch:\n", batch)
+    print("\nOutput shape:", out.shape)
+    print(out)
 
-decoded_text = tokenizer.decode(out.squeeze(0).tolist())
-print("Input:", start_context)
-print("Output:", decoded_text)
+    # 4.8 Generating text
+    torch.manual_seed(123)
+    start_context = "The pig is really"
+    encoded = tokenizer.encode(start_context)
+    print("encoded:", encoded)  # list of 4 token idx's
+    encoded_tensor = torch.tensor(encoded).unsqueeze(0)
+    print("encoded_tensor.shape:", encoded_tensor.shape)  # 1x4
+
+    model.eval()  # skips dropout,etc that are only used during training
+    out = generate_text_simple(model, encoded_tensor, max_new_tokens=6, context_size=GPT_CONFIG_124M["context_length"])
+    print("Output:", out)
+    print("Output len=", len(out[0]))
+
+    decoded_text = tokenizer.decode(out.squeeze(0).tolist())
+    print("Input:", start_context)
+    print("Output:", decoded_text)
