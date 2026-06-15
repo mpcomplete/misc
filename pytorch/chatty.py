@@ -179,13 +179,6 @@ import tiktoken
 
 tokenizer = tiktoken.get_encoding("gpt2")
 
-batch = []
-
-torch.manual_seed(123)
-model = GPTModel(GPT_CONFIG_124M)
-model.to(device)
-model.eval()
-
 def generate_and_stream(model, prompt, context_size):
     encoded = tokenizer.encode(prompt)
     idx = torch.tensor(encoded).unsqueeze(0).to(device)
@@ -209,7 +202,7 @@ def generate_and_stream(model, prompt, context_size):
     except KeyboardInterrupt:
         print("\n[Interrupted]")
 
-def main():
+def main(model):
     print("Interactive LLM - Enter a prompt (Ctrl+C to exit)")
     while True:
         try:
@@ -221,4 +214,9 @@ def main():
             break
 
 if __name__ == "__main__":
-    main()
+    torch.manual_seed(123)
+    model = GPTModel(GPT_CONFIG_124M)
+    model.to(device)
+    model.eval()
+
+    main(model)
