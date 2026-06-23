@@ -75,3 +75,8 @@ token_ids = generate(
 )
 
 print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
+
+# print(gpt)
+
+from chatty import main
+main(gpt, GPT_CONFIG["context_length"])

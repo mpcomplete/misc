@@ -165,4 +165,4 @@ if __name__ == "__main__":
         print("Output text with temperature:\n", token_ids_to_text(token_ids, tokenizer))
 
     from chatty import main
-    #main(model)
+    #main(model, GPT_CONFIG_124M["context_length"])
