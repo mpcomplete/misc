@@ -185,6 +185,33 @@ def generate_text_simple(model, idx, max_new_tokens, context_size):
         idx = torch.cat((idx, idx_next), dim=1)
     return idx
 
+# 5.3 Improving text generation with top-k filtering and temperature scaling
+# top-k first filters out all but the most probable k tokens.
+# temperature scaling sharpens or flattens the probability distribution (lower temp = more likely to select most probable token).
+def generate(model, idx, max_new_tokens, context_size, temperature=0.0, top_k=None, eos_id=None):
+    for _ in range(max_new_tokens):
+        idx_cond = idx[:, -context_size:]
+        with torch.no_grad():
+            logits = model(idx_cond)
+        logits = logits[:, -1, :]
+        if top_k is not None:
+            top_logits, _ = torch.topk(logits, top_k)
+            min_val = top_logits[:, -1]
+            logits = torch.where(
+                condition=logits < min_val,
+                input=torch.tensor(float('-inf')).to(logits.device),
+                other=logits)
+        if temperature > 0.0:
+            logits = logits / temperature
+            probas = torch.softmax(logits, dim=-1)
+            idx_next = torch.multinomial(probas, num_samples=1)
+        else:
+           idx_next = torch.argmax(logits, dim=-1, keepdim=True)
+        if idx_next == eos_id:
+            break
+        idx = torch.cat((idx, idx_next), dim=1)
+    return idx
+
 def text_to_token_ids(text, tokenizer):
     encoded = tokenizer.encode(text, allowed_special={'<|endoftext|>'})
     return torch.tensor(encoded).unsqueeze(0)
