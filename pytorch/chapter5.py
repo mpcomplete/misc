@@ -3,10 +3,17 @@ from transformer import *
 import torch
 import torch.nn as nn
 import tiktoken
+from pathlib import Path
 
 GPT_CONFIG_124M["context_length"] = 256  # be gentle on our laptop
 
 torch.manual_seed(123)
+
+from read_book import read_all_books
+
+# raw_text = read_all_books(Path("./gutenberg_txt"), 10)
+# print(f"Got input text: {len(raw_text)}")
+# print(raw_text)
 
 with open("the-verdict.txt", "r", encoding="utf-8") as f:
     raw_text = f.read()
@@ -127,7 +134,7 @@ model.to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=0.0004, weight_decay=0.1)
 train_losses, val_losses, track_tokens_seen = train_model_simple(
     model, train_loader, val_loader, optimizer, device,
-    num_epochs=10, eval_freq=5, eval_iter=5, start_context="Every effort moves you", tokenizer=tokenizer)
+    num_epochs=1, eval_freq=100, eval_iter=100, start_context="Every effort moves you", tokenizer=tokenizer)
 
 from chatty import main
-#main(model)
+main(model)
