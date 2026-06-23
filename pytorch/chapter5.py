@@ -9,7 +9,7 @@ GPT_CONFIG_124M["context_length"] = 256  # be gentle on our laptop
 
 torch.manual_seed(123)
 
-from read_book import read_all_books
+# from read_book import read_all_books
 
 # raw_text = read_all_books(Path("./gutenberg_txt"), 10)
 # print(f"Got input text: {len(raw_text)}")
@@ -135,33 +135,34 @@ def maybe_load_saved_model(model, optimizer, filename):
         return True
     return False
 
-tokenizer = tiktoken.get_encoding("gpt2")
-torch.manual_seed(123)
-model = GPTModel(GPT_CONFIG_124M)
-model.to(device)
-optimizer = torch.optim.AdamW(model.parameters(), lr=0.0004, weight_decay=0.1)
-if not maybe_load_saved_model(model, optimizer, "model_and_optimizer.pth"):
-    train_losses, val_losses, track_tokens_seen = train_model_simple(
-        model, train_loader, val_loader, optimizer, device,
-        num_epochs=10, eval_freq=100, eval_iter=100, start_context="Every effort moves you", tokenizer=tokenizer)
+if __name__ == "__main__":
+    tokenizer = tiktoken.get_encoding("gpt2")
+    torch.manual_seed(123)
+    model = GPTModel(GPT_CONFIG_124M)
+    model.to(device)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0004, weight_decay=0.1)
+    if not maybe_load_saved_model(model, optimizer, "model_and_optimizer.pth"):
+        train_losses, val_losses, track_tokens_seen = train_model_simple(
+            model, train_loader, val_loader, optimizer, device,
+            num_epochs=10, eval_freq=100, eval_iter=100, start_context="Every effort moves you", tokenizer=tokenizer)
 
-torch.save({
-        "model_state_dict": model.state_dict(),
-        "optimizer_state_dict": optimizer.state_dict(),
-    },
-    "model_and_optimizer.pth"
-)
+    torch.save({
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+        },
+        "model_and_optimizer.pth"
+    )
 
-torch.manual_seed(123)
-for i in range(5):
-    token_ids = generate(
-        model=model,
-        idx=text_to_token_ids("Every effort moves you", tokenizer).to(device),
-        max_new_tokens=15,
-        context_size=GPT_CONFIG_124M["context_length"],
-        top_k=None,
-        temperature=1)
-    print("Output text with temperature:\n", token_ids_to_text(token_ids, tokenizer))
+    torch.manual_seed(123)
+    for i in range(5):
+        token_ids = generate(
+            model=model,
+            idx=text_to_token_ids("Every effort moves you", tokenizer).to(device),
+            max_new_tokens=15,
+            context_size=GPT_CONFIG_124M["context_length"],
+            top_k=None,
+            temperature=1)
+        print("Output text with temperature:\n", token_ids_to_text(token_ids, tokenizer))
 
-from chatty import main
-#main(model)
+    from chatty import main
+    #main(model)
