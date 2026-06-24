@@ -22,7 +22,7 @@ split_idx = int(train_ratio * len(raw_text))
 train_data = raw_text[:split_idx]
 val_data = raw_text[split_idx:]
 
-train_loader, _ = create_dataloader_v1(
+train_loader = create_dataloader_v1(
     train_data,
     batch_size=2,
     max_length=GPT_CONFIG_124M["context_length"],
@@ -31,7 +31,7 @@ train_loader, _ = create_dataloader_v1(
     shuffle=True,
     num_workers=0)
 
-val_loader, _ = create_dataloader_v1(
+val_loader = create_dataloader_v1(
     val_data,
     batch_size=2,
     max_length=GPT_CONFIG_124M["context_length"],

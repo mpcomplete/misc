@@ -40,7 +40,7 @@ def create_dataloader_v1(txt, batch_size=4, max_length=256, stride=128, shuffle=
         drop_last=drop_last,
         num_workers=num_workers
     )
-    return dataloader, vocab_size
+    return dataloader
 
 if __name__ == "__main__":
     with open("the-verdict.txt", "r", encoding="utf-8") as f:
@@ -53,7 +53,8 @@ if __name__ == "__main__":
     # word that follows input[0:X]. GPT is gonna predict target[X] after seeing input[0:X].
 
     context_length = 4
-    dataloader, vocab_size = create_dataloader_v1(raw_text, batch_size=8, max_length=context_length, stride=context_length, shuffle=False)
+    vocab_size = 50257
+    dataloader = create_dataloader_v1(raw_text, batch_size=8, max_length=context_length, stride=context_length, shuffle=False)
     #batches = iter(dataloader)
     #print(next(batches))
 
