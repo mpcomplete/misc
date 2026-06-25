@@ -22,7 +22,7 @@ import torch
 # https://github.com/rasbt/LLMs-from-scratch/tree/main/pkg
 from tokens import create_dataloader_v1
 from transformer import GPTModel
-from chapter5 import calc_loss_batch, evaluate_model, plot_losses, generate_and_print_sample
+from chapter5 import calc_loss_batch, evaluate_model, plot_losses, generate_and_print_sample, save_state
 
 def read_text_file(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
@@ -139,7 +139,7 @@ def train_model_simple(model, optimizer, device, n_epochs,
 
     except KeyboardInterrupt:
         file_name = output_dir / f"model_pg_{global_step}_interrupted.pth"
-        torch.save(model.state_dict(), file_name)
+        save_state(model, optimizer, file_name)
         print(f"Saved {file_name}")
 
     return train_losses, val_losses, track_tokens_seen
@@ -184,7 +184,7 @@ if __name__ == "__main__":
     else:
         GPT_CONFIG_124M = {
             "vocab_size": 50257,     # Vocabulary size
-            "context_length": 1024,  # Context length
+            "context_length": 256,   # Context length
             "emb_dim": 768,          # Embedding dimension
             "n_heads": 12,           # Number of attention heads
             "n_layers": 12,          # Number of layers
@@ -229,5 +229,5 @@ if __name__ == "__main__":
     epochs_tensor = torch.linspace(0, args.n_epochs, len(train_losses))
     plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses)
 
-    torch.save(model.state_dict(), output_dir / "model_pg_final.pth")
+    save_state(model, optimizer, output_dir / "model_pg_final.pth")
     print(f"Maximum GPU memory allocated: {torch.cuda.max_memory_allocated() / 1e9:.2f} GB")

@@ -6,6 +6,7 @@ import tiktoken
 from pathlib import Path
 
 GPT_CONFIG_124M["context_length"] = 256  # be gentle on our laptop
+GPT_CONFIG_124M["context_length"] = 1024  # be gentle on our laptop
 
 torch.manual_seed(123)
 
@@ -149,21 +150,35 @@ def generate_and_print_sample(model, tokenizer, device, start_context):
     print(decoded_text.replace("\n", " "))
     model.train()
 
-def maybe_load_saved_model(model, optimizer, filename):
-    if Path(filename).exists():
-        saved_data = torch.load(filename, map_location=device)
-        model.load_state_dict(saved_data["model_state_dict"])
-        optimizer.load_state_dict(saved_data["optimizer_state_dict"])
+def maybe_load_saved_model(model, optimizer, path):
+    if path.exists():
+        saved_data = torch.load(path, map_location=device)
+        if "model_state_dict" in saved_data:
+            model.load_state_dict(saved_data["model_state_dict"])
+            optimizer.load_state_dict(saved_data["optimizer_state_dict"])
+        else:
+            print("key not found")
+            model.load_state_dict(saved_data)
         return True
     return False
 
+def save_state(model, optimizer, path):
+    torch.save({
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+        },
+        path
+    )
+
 if __name__ == "__main__":
+    model_path = Path("model_and_optimizer.pth")
+    model_path = Path("model_checkpoints") / "model_pg_final.pth"
     tokenizer = tiktoken.get_encoding("gpt2")
     torch.manual_seed(123)
     model = GPTModel(GPT_CONFIG_124M)
     model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.0004, weight_decay=0.1)
-    if not maybe_load_saved_model(model, optimizer, "model_and_optimizer.pth"):
+    if not maybe_load_saved_model(model, optimizer, model_path):
         train_losses, val_losses, track_tokens_seen = train_model_simple(
             model, train_loader, val_loader, optimizer, device,
             num_epochs=10, eval_freq=100, eval_iter=100, start_context="Every effort moves you", tokenizer=tokenizer)
@@ -172,7 +187,7 @@ if __name__ == "__main__":
             "model_state_dict": model.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
         },
-        "model_and_optimizer.pth"
+        model_path
     )
 
     torch.manual_seed(123)
@@ -187,4 +202,4 @@ if __name__ == "__main__":
         print("Output text with temperature:\n", token_ids_to_text(token_ids, tokenizer))
 
     from chatty import main
-    #main(model, GPT_CONFIG_124M["context_length"])
+    main(model, GPT_CONFIG_124M["context_length"])
